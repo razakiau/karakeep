@@ -6,7 +6,7 @@ on:
       branch:
         description: "Branch to build from"
         required: true
-        default: "feat/content-source-tracking-v2"
+        default: "feat/content-source-tracking-v3"
       tag:
         description: "Image tag (default: latest)"
         required: false
@@ -42,8 +42,18 @@ jobs:
           target: aio
           platforms: linux/amd64
           push: true
+          # Derived from the repo rather than hardcoded: this fork moved from
+          # zackautocracy to razakiau, and the old hardcoded org silently broke
+          # the push. ${{ github.repository }} follows a rename automatically.
           tags: |
-            ghcr.io/zackautocracy/karakeep:${{ github.event.inputs.tag }}
-            ghcr.io/zackautocracy/karakeep:${{ github.sha }}
+            ghcr.io/${{ github.repository }}:${{ github.event.inputs.tag }}
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          # Without these the image inherits upstream's source label and has no
+          # revision at all, so identifying the deployed code took four separate
+          # probes. Now `docker image inspect` answers it.
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ github.event.inputs.tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
