@@ -196,6 +196,7 @@ export class Bookmark extends BareBookmark {
         htmlContent: includeContent
           ? await Bookmark.getBookmarkHtmlContent(link, bookmark.userId)
           : null,
+        contentSource: link.contentSource,
         readerViewStatus: link.readerViewStatus,
         readerViewScore: link.readerViewScore,
         preferredPreview: getPreferredLinkPreview({
@@ -617,6 +618,7 @@ export class Bookmark extends BareBookmark {
                   : row.bookmarkLinks.htmlContent
                 : null,
               contentAssetId: row.bookmarkLinks.contentAssetId,
+              contentSource: row.bookmarkLinks.contentSource,
               readerViewStatus: row.bookmarkLinks.readerViewStatus,
               readerViewScore: row.bookmarkLinks.readerViewScore,
               preferredPreview: getPreferredLinkPreview({
