@@ -359,6 +359,7 @@ async function runCrawler(
     contentAssetId: oldContentAssetId,
     precrawledArchiveAssetId,
     probeMetadataAt,
+    contentSource,
   } = await getBookmarkDetails(bookmarkId);
 
   const userData = await db.query.users.findFirst({
@@ -464,6 +465,7 @@ async function runCrawler(
         contentAssetId: oldContentAssetId,
       },
       precrawledArchiveAssetId,
+      contentSource,
       forceStorePdf: storePdf ?? false,
       numRetriesLeft,
       probeMetadataPromise,
@@ -894,6 +896,11 @@ interface CrawlAndParseUrlArgs {
     contentAssetId: string | undefined;
   };
   precrawledArchiveAssetId: string | undefined;
+  /**
+   * Where the bookmark's current content came from. Content the user set
+   * manually is never overwritten by a crawl.
+   */
+  contentSource: "crawled" | "manual" | "transcript";
   forceStorePdf: boolean;
   numRetriesLeft: number;
   probeMetadataPromise: Promise<ParseSubprocessOutput["metadata"] | null>;
@@ -914,6 +921,7 @@ const crawlAndParseUrl = traced(
     const {
       oldAssets,
       precrawledArchiveAssetId,
+      contentSource,
       forceStorePdf,
       numRetriesLeft,
       probeMetadataPromise,
@@ -1067,10 +1075,18 @@ const crawlAndParseUrl = traced(
     );
     abortSignal.throwIfAborted();
 
-    const htmlContentAssetInfo = await storeHtmlContent(
-      ctx,
-      readableContent?.content,
-    );
+    // Content the user set by hand outperforms anything we can crawl, so
+    // leave it alone. Skipping the store call entirely also avoids writing
+    // an asset (and consuming quota) that we'd only discard below.
+    const preserveExistingContent = contentSource === "manual";
+    if (preserveExistingContent) {
+      log.info(
+        `Keeping manually-set content for bookmark "${bookmarkId}"; not overwriting it with the crawled content.`,
+      );
+    }
+    const htmlContentAssetInfo = preserveExistingContent
+      ? ({ result: "not_stored" } as const)
+      : await storeHtmlContent(ctx, readableContent?.content);
     abortSignal.throwIfAborted();
     let imageAssetInfo: DBAssetType | null = null;
     if (meta.image && serverConfig.crawler.downloadBannerImage) {
@@ -1101,11 +1117,18 @@ const crawlAndParseUrl = traced(
         .update(bookmarkLinks)
         .set({
           crawledAt: new Date(),
-          htmlContent: inlineHtmlContent,
-          contentAssetId:
-            htmlContentAssetInfo.result === "stored"
-              ? htmlContentAssetInfo.assetId
-              : null,
+          // Leave htmlContent/contentAssetId/contentSource untouched when
+          // preserving manual content; everything else still gets refreshed.
+          ...(preserveExistingContent
+            ? {}
+            : {
+                htmlContent: inlineHtmlContent,
+                contentAssetId:
+                  htmlContentAssetInfo.result === "stored"
+                    ? htmlContentAssetInfo.assetId
+                    : null,
+                contentSource: "crawled" as const,
+              }),
           readerViewStatus: readerViewAssessment?.status ?? null,
           readerViewScore: readerViewAssessment?.score ?? null,
           readerViewReasons,
@@ -1166,8 +1189,9 @@ const crawlAndParseUrl = traced(
           txn,
         );
         assetIdsToDelete.push(oldAssets.contentAssetId);
-      } else if (oldAssets.contentAssetId) {
-        // Unlink the old content asset
+      } else if (oldAssets.contentAssetId && !preserveExistingContent) {
+        // Unlink the old content asset. Skipped when preserving manual
+        // content, since that asset is still the live content.
         txn.delete(assets).where(eq(assets.id, oldAssets.contentAssetId)).run();
         assetIdsToDelete.push(oldAssets.contentAssetId);
       }
