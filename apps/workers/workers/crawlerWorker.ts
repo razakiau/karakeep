@@ -363,6 +363,7 @@ async function runCrawler(
     contentAssetId: oldContentAssetId,
     precrawledArchiveAssetId,
     probeMetadataAt,
+    contentSource,
   } = await getBookmarkDetails(bookmarkId);
 
   await checkDomainRateLimit(url, jobId);
@@ -467,6 +468,7 @@ async function runCrawler(
         contentAssetId: oldContentAssetId,
       },
       precrawledArchiveAssetId,
+      contentSource,
       archiveFullPage,
       forceStorePdf: storePdf ?? false,
       numRetriesLeft,
