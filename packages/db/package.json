@@ -8,6 +8,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "migrate": "tsx migrate.ts",
+    "reconcile:fork-content-source": "tsx reconcileForkContentSource.ts",
     "generate": "drizzle-kit generate",
     "studio": "drizzle-kit studio",
     "format": "oxfmt --ignore-path=../../.gitignore --check .",
