@@ -312,6 +312,11 @@ export const bookmarkLinks = sqliteTable(
       enum: ["pending", "failure", "success"],
     }).default("pending"),
     crawlStatusCode: integer("crawlStatusCode").default(200),
+    contentSource: text("contentSource", {
+      enum: ["crawled", "manual", "transcript"],
+    })
+      .notNull()
+      .default("crawled"),
     // When the pre-crawl probe last extracted and stored this link's metadata.
     // Lets crawl retries skip re-fetching it.
     probeMetadataAt: integer("probeMetadataAt", { mode: "timestamp" }),
@@ -733,7 +738,16 @@ export const webhooksTable = sqliteTable(
       .references(() => users.id, { onDelete: "cascade" }),
     events: text("events", { mode: "json" })
       .notNull()
-      .$type<("created" | "edited" | "crawled" | "ai tagged" | "deleted")[]>(),
+      .$type<
+        (
+          | "created"
+          | "edited"
+          | "crawled"
+          | "ai tagged"
+          | "deleted"
+          | "video_processed"
+        )[]
+      >(),
     token: text("token"),
   },
   (bl) => [index("webhooks_userId_idx").on(bl.userId)],
