@@ -307,8 +307,20 @@ async function enqueuePostCrawlJobs(
   // Update the search index
   await triggerSearchReindex(bookmarkId, enqueueOpts);
 
-  if (serverConfig.crawler.downloadVideo) {
-    // Trigger a potential download of a video from the URL
+  // The video worker owns two separate jobs: downloading the video, and
+  // fetching its subtitles as a transcript. Gating the enqueue on
+  // downloadVideo alone made transcript extraction unreachable whenever
+  // CRAWLER_VIDEO_DOWNLOAD=false, even with CRAWLER_EXTRACT_TRANSCRIPT=true.
+  //
+  // videoWorker already handles this correctly: downloadVideo() returns early
+  // with "done" when downloads are disabled, and processTranscript() still
+  // runs. The job simply never got queued for it to do so.
+  if (
+    serverConfig.crawler.downloadVideo ||
+    serverConfig.crawler.extractTranscript
+  ) {
+    // Trigger a potential download of a video from the URL, and/or extraction
+    // of its transcript. The worker decides which of the two to actually do.
     await VideoWorkerQueue.enqueue(
       {
         bookmarkId,
