@@ -1,7 +1,9 @@
 import { experimental_trpcMiddleware, TRPCError } from "@trpc/server";
 import { and, eq, gt, inArray, like, lt, or } from "drizzle-orm";
+import DOMPurify from "isomorphic-dompurify";
 import { z } from "zod";
 
+import type { DB } from "@karakeep/db";
 import {
   assets,
   AssetTypes,
@@ -26,9 +28,14 @@ import {
   OpenAIQueue,
   QueuePriority,
   QuotaService,
+  storeHtmlContent,
   triggerSearchReindex,
 } from "@karakeep/shared-server";
-import { SUPPORTED_BOOKMARK_ASSET_TYPES } from "@karakeep/shared/assetdb";
+import {
+  ASSET_TYPES,
+  silentDeleteAsset,
+  SUPPORTED_BOOKMARK_ASSET_TYPES,
+} from "@karakeep/shared/assetdb";
 import serverConfig from "@karakeep/shared/config";
 import {
   EmbeddingClientFactory,
@@ -235,6 +242,100 @@ async function shouldUseLowPriorityQueues(
     // Don't block bookmark creation if rate limiting is unavailable.
     return false;
   }
+}
+
+interface HtmlContentUpdate {
+  htmlContent: string | null;
+  contentAssetId: string | null;
+  contentAssetSize: number | null;
+  contentSource: "manual" | "crawled";
+  oldContentAssetId: string | null;
+}
+
+/**
+ * Works out how a user-supplied htmlContent update should be persisted.
+ *
+ * Runs *before* the update transaction because storing large content writes to
+ * the asset store, which we don't want to do while holding a write txn.
+ * Returns undefined when the caller didn't ask to change the content at all.
+ */
+async function prepareHtmlContentUpdate(
+  db: DB,
+  bookmarkId: string,
+  htmlContent: string | null | undefined,
+  userId: string,
+): Promise<HtmlContentUpdate | undefined> {
+  if (htmlContent === undefined) return undefined;
+
+  const existingLink = await db.query.bookmarkLinks.findFirst({
+    where: eq(bookmarkLinks.id, bookmarkId),
+    columns: { contentAssetId: true },
+  });
+
+  if (!existingLink) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Attempting to set link attributes for non-link type bookmark",
+    });
+  }
+
+  const oldContentAssetId = existingLink.contentAssetId;
+
+  // Clearing content resets ownership back to the crawler.
+  if (!htmlContent) {
+    return {
+      htmlContent: null,
+      contentAssetId: null,
+      contentAssetSize: null,
+      contentSource: "crawled",
+      oldContentAssetId,
+    };
+  }
+
+  const sanitized = DOMPurify.sanitize(htmlContent);
+  if (!sanitized) {
+    // Sanitization stripped everything — treat as clearing the content.
+    return {
+      htmlContent: null,
+      contentAssetId: null,
+      contentAssetSize: null,
+      contentSource: "crawled",
+      oldContentAssetId,
+    };
+  }
+
+  const storageResult = await storeHtmlContent(
+    sanitized,
+    userId,
+    bookmarkId,
+    "ManualContent",
+  );
+
+  if (storageResult.result === "stored") {
+    return {
+      htmlContent: null,
+      contentAssetId: storageResult.assetId,
+      contentAssetSize: storageResult.size,
+      contentSource: "manual",
+      oldContentAssetId,
+    };
+  }
+
+  if (storageResult.result === "store_inline") {
+    return {
+      htmlContent: sanitized,
+      contentAssetId: null,
+      contentAssetSize: null,
+      contentSource: "manual",
+      oldContentAssetId,
+    };
+  }
+
+  // not_stored — quota exceeded for large content.
+  throw new TRPCError({
+    code: "PAYLOAD_TOO_LARGE",
+    message: "Storage quota exceeded. Cannot store HTML content.",
+  });
 }
 
 export const bookmarksAppRouter = router({
@@ -570,6 +671,15 @@ export const bookmarksAppRouter = router({
     .output(zBookmarkSchema)
     .use(ensureBookmarkOwnership)
     .mutation(async ({ input, ctx }) => {
+      // Done outside the transaction: storing large content hits the asset
+      // store, and we don't want that happening under a write lock.
+      const htmlContentUpdate = await prepareHtmlContentUpdate(
+        ctx.db,
+        input.bookmarkId,
+        input.htmlContent,
+        ctx.user.id,
+      );
+
       await ctx.db.transaction(async (tx) => {
         let somethingChanged = false;
 
@@ -652,6 +762,42 @@ export const bookmarksAppRouter = router({
           somethingChanged = true;
         }
 
+        if (htmlContentUpdate) {
+          await tx
+            .update(bookmarkLinks)
+            .set({
+              htmlContent: htmlContentUpdate.htmlContent,
+              contentAssetId: htmlContentUpdate.contentAssetId,
+              contentSource: htmlContentUpdate.contentSource,
+            })
+            .where(eq(bookmarkLinks.id, input.bookmarkId));
+
+          // Keep the assets table in sync with where the content now lives.
+          if (htmlContentUpdate.contentAssetId) {
+            if (htmlContentUpdate.oldContentAssetId) {
+              await tx
+                .delete(assets)
+                .where(eq(assets.id, htmlContentUpdate.oldContentAssetId));
+            }
+            await tx.insert(assets).values({
+              id: htmlContentUpdate.contentAssetId,
+              bookmarkId: input.bookmarkId,
+              userId: ctx.user.id,
+              assetType: AssetTypes.LINK_HTML_CONTENT,
+              contentType: ASSET_TYPES.TEXT_HTML,
+              size: htmlContentUpdate.contentAssetSize ?? undefined,
+              fileName: null,
+            });
+          } else if (htmlContentUpdate.oldContentAssetId) {
+            // Cleared, or small enough to go inline — drop the old asset row.
+            await tx
+              .delete(assets)
+              .where(eq(assets.id, htmlContentUpdate.oldContentAssetId));
+          }
+
+          somethingChanged = true;
+        }
+
         // Update common bookmark fields
         const commonUpdateData: Partial<{
           title: string | null;
@@ -695,6 +841,31 @@ export const bookmarksAppRouter = router({
             );
         }
       });
+
+      // Only safe once the transaction has committed.
+      if (htmlContentUpdate?.oldContentAssetId) {
+        await silentDeleteAsset(
+          ctx.user.id,
+          htmlContentUpdate.oldContentAssetId,
+        );
+      }
+
+      // Manually-set content can optionally be re-run through inference.
+      if (
+        htmlContentUpdate?.contentSource === "manual" &&
+        input.triggerInference
+      ) {
+        await Promise.all([
+          OpenAIQueue.enqueue(
+            { bookmarkId: input.bookmarkId, type: "tag" },
+            { priority: QueuePriority.Default, groupId: ctx.user.id },
+          ),
+          OpenAIQueue.enqueue(
+            { bookmarkId: input.bookmarkId, type: "summarize" },
+            { priority: QueuePriority.Default, groupId: ctx.user.id },
+          ),
+        ]);
+      }
 
       // Refetch the updated bookmark data to return the full object
       const updatedBookmark = (

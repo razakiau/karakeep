@@ -17,7 +17,6 @@ import type { RunProxyConfig } from "network";
 import { db } from "@karakeep/db";
 import { getTracer, QuotaService, withSpan } from "@karakeep/shared-server";
 import {
-  ASSET_TYPES,
   getAssetSize,
   IMAGE_ASSET_TYPES,
   newAssetId,
@@ -479,83 +478,10 @@ export async function archiveWebpage(
   );
 }
 
-export type StoreHtmlResult =
-  | { result: "stored"; assetId: string; size: number }
-  | { result: "store_inline" }
-  | { result: "not_stored" };
-
-export async function storeHtmlContent(
-  htmlContent: string | undefined,
-  userId: string,
-  jobId: string,
-): Promise<StoreHtmlResult> {
-  return await withSpan(
-    tracer,
-    "crawlerWorker.storeHtmlContent",
-    {
-      attributes: {
-        "job.id": jobId,
-        "user.id": userId,
-        "bookmark.content.size": htmlContent
-          ? Buffer.byteLength(htmlContent, "utf8")
-          : 0,
-      },
-    },
-    async () => {
-      if (!htmlContent) {
-        return { result: "not_stored" };
-      }
-
-      const contentSize = Buffer.byteLength(htmlContent, "utf8");
-
-      // Only store in assets if content is >= 50KB
-      if (contentSize < serverConfig.crawler.htmlContentSizeThreshold) {
-        logger.info(
-          `[Crawler][${jobId}] HTML content size (${contentSize} bytes) is below threshold, storing inline`,
-        );
-        return { result: "store_inline" };
-      }
-
-      const { data: quotaApproved, error: quotaError } = await tryCatch(
-        QuotaService.checkStorageQuota(db, userId, contentSize),
-      );
-      if (quotaError) {
-        logger.warn(
-          `[Crawler][${jobId}] Skipping HTML content storage due to quota exceeded: ${quotaError.message}`,
-        );
-        return { result: "not_stored" };
-      }
-
-      const assetId = newAssetId();
-
-      const { error: saveError } = await tryCatch(
-        saveAsset({
-          userId,
-          assetId,
-          asset: Buffer.from(htmlContent, "utf8"),
-          metadata: {
-            contentType: ASSET_TYPES.TEXT_HTML,
-            fileName: null,
-          },
-          quotaApproved,
-        }),
-      );
-      if (saveError) {
-        logger.error(
-          `[Crawler][${jobId}] Failed to store HTML content as asset: ${saveError}`,
-        );
-        throw saveError;
-      }
-
-      logger.info(
-        `[Crawler][${jobId}] Stored large HTML content (${contentSize} bytes) as asset: ${assetId}`,
-      );
-
-      return {
-        result: "stored",
-        assetId,
-        size: contentSize,
-      };
-    },
-  );
-}
+// Moved to @karakeep/shared-server so the tRPC layer can share the same
+// implementation when users set bookmark content manually. Re-exported here to
+// keep the crawler's import surface unchanged.
+export {
+  storeHtmlContent,
+  type StoreHtmlResult,
+} from "@karakeep/shared-server";

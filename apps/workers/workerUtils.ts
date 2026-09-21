@@ -54,5 +54,6 @@ export async function getBookmarkDetails(bookmarkId: string) {
     contentAssetId: bookmark.assets.find(
       (a) => a.assetType == AssetTypes.LINK_HTML_CONTENT,
     )?.id,
+    contentSource: bookmark.link.contentSource,
   };
 }

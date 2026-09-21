@@ -132,6 +132,7 @@ export const zBookmarkedLinkSchema = z.object({
   favicon: z.string().nullish(),
   htmlContent: z.string().nullish(),
   contentAssetId: z.string().nullish(),
+  contentSource: z.enum(["crawled", "manual", "transcript"]).nullish(),
   readerViewStatus: zReaderViewStatusSchema.nullish(),
   readerViewScore: z.number().int().min(0).max(100).nullish(),
   preferredPreview: zPreferredLinkPreviewSchema.nullish(),
@@ -333,6 +334,10 @@ export const zUpdateBookmarksRequestSchema = z.object({
 
   // Asset specific fields (optional)
   assetContent: z.string().nullish(),
+
+  // Link HTML content (optional) — for setting reader view content via API
+  htmlContent: z.string().nullish(),
+  triggerInference: z.boolean().optional(),
 });
 export type ZUpdateBookmarksRequest = z.infer<
   typeof zUpdateBookmarksRequestSchema
