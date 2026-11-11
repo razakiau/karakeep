@@ -39,9 +39,12 @@ import logger from "@karakeep/shared/logger";
 import { DequeuedJob, getQueueClient } from "@karakeep/shared/queueing";
 
 import { getBookmarkDetails, updateAsset } from "../workerUtils";
+import { buildSubLangPattern, pickSubtitleFile } from "./subtitlePicker";
 import { parseVttToHtml } from "./vttParser";
 
 const TMP_FOLDER = path.join(os.tmpdir(), "video_downloads");
+// Written by yt-dlp with the video's spoken language, for pickSubtitleFile.
+const LANGUAGE_FILE = "language.txt";
 
 export class VideoWorker {
   static async build() {
@@ -133,11 +136,14 @@ async function extractTranscript(
       "--write-auto-subs",
       "--ignore-errors",
       "--sub-lang",
-      transcriptLangs,
+      buildSubLangPattern(transcriptLangs),
       "--sub-format",
       "vtt",
       "--skip-download",
       "--no-playlist",
+      "--print-to-file",
+      "%(language)s",
+      `${tmpDir}/${LANGUAGE_FILE}`,
       "--output",
       `${tmpDir}/%(id)s`,
       url,
@@ -157,19 +163,25 @@ async function extractTranscript(
     }
 
     const files = await readdir(tmpDir);
+    const originalLanguage = await readFile(
+      path.join(tmpDir, LANGUAGE_FILE),
+      "utf-8",
+    ).catch(() => null);
     const vttFiles = files.filter((f) => f.endsWith(".vtt"));
-    if (vttFiles.length === 0) return null;
-
-    // Prefer a VTT matching the configured language order.
-    const langOrder = transcriptLangs.split(",").map((l) => l.trim());
-    let selectedVtt = vttFiles[0];
-    for (const lang of langOrder) {
-      const match = vttFiles.find((f) => f.includes(`.${lang}.`));
-      if (match) {
-        selectedVtt = match;
-        break;
-      }
+    const selectedVtt = pickSubtitleFile(
+      vttFiles,
+      originalLanguage,
+      transcriptLangs,
+    );
+    if (!selectedVtt) {
+      logger.warn(
+        `[VideoCrawler][${jobId}] No usable subtitles for "${url}" (language: ${originalLanguage?.trim() || "unknown"}, tracks: ${vttFiles.join(", ") || "none"}); keeping the crawled content`,
+      );
+      return null;
     }
+    logger.info(
+      `[VideoCrawler][${jobId}] Using subtitles "${selectedVtt}" for "${url}"`,
+    );
 
     // yt-dlp derives the filename from the video id, so make sure a crafted id
     // can't write/read outside the temp dir.
@@ -187,7 +199,9 @@ async function extractTranscript(
     return parseVttToHtml(vttContent);
   } catch {
     abortSignal?.throwIfAborted();
-    logger.info(`[VideoCrawler][${jobId}] No subtitles available for "${url}"`);
+    logger.warn(
+      `[VideoCrawler][${jobId}] Subtitle extraction failed for "${url}"; keeping the crawled content`,
+    );
     return null;
   }
 }
