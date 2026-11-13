@@ -6,7 +6,7 @@ on:
       branch:
         description: "Branch to build from"
         required: true
-        default: "feat/content-source-tracking-v3"
+        default: "main"
       tag:
         description: "Image tag (default: latest)"
         required: false
