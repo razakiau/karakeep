@@ -1,9 +1,10 @@
 import { db } from "@karakeep/db";
-import { ASSET_TYPES, newAssetId, saveAsset } from "@karakeep/shared/assetdb";
+import { ASSET_TYPES } from "@karakeep/shared/assetdb";
 import serverConfig from "@karakeep/shared/config";
 import logger from "@karakeep/shared/logger";
 import { tryCatch } from "@karakeep/shared/tryCatch";
 
+import { newAssetId, saveAsset } from "./assetdb";
 import { QuotaService } from "./services/quotaService";
 import { getTracer, withSpan } from "./tracing";
 

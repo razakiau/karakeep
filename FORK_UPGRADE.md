@@ -1,5 +1,25 @@
 # Fork upgrade notes
 
+## Upgrading to the v0.34 rebase (content source tracking v4)
+
+Upstream v0.34 took migration number 0094 for `0094_migrate_to_better_auth`,
+stamped _earlier_ (1785711744217) than the fork's `0094_add_content_source`
+(1789922999922). The fork's migration is now `0095_add_content_source`.
+
+A database that ran the v0.33 fork therefore holds a contentSource row whose
+stamp is newer than upstream's 0094: drizzle's watermark would skip the
+better-auth migration and then fail 0095 with `duplicate column name`. This is
+the same shape as the 0081 case below, and the same reconciliation fixes it.
+
+**`migrate.ts` now runs the reconciliation itself**, before and after drizzle's
+`migrate()`, so the image's startup migration handles both cases. Both steps
+are no-ops on a fresh or already-reconciled database. Back up `db.db` first
+anyway.
+
+After the upgrade, expect `__drizzle_migrations` to hold 96 rows (95 before),
+the newest stamped with 0095's `when`, and the `contentSource` distribution to
+match what it was before.
+
 ## Upgrading a database that ran the old fork `0081_add_content_source`
 
 **Applies to:** any deployment that ran this fork before it was rebased onto
@@ -29,9 +49,9 @@ Drizzle picks what to run from a single `MAX(created_at)` watermark and applies
 everything newer inside one transaction (see
 `drizzle-orm/sqlite-core/dialect.js`). That leaves two failure modes:
 
-| Approach | Outcome |
-| --- | --- |
-| Run migrations as-is | Fails with `duplicate column name`, whole batch rolls back |
+| Approach                    | Outcome                                                                                                                                                                       |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Run migrations as-is        | Fails with `duplicate column name`, whole batch rolls back                                                                                                                    |
 | Restamp the stale row first | **Silently skips upstream 0081..0093.** The schema ends up missing columns the new code selects (e.g. `readerViewStatus`), so it fails later at runtime instead of at startup |
 
 The second is the more dangerous one: migrations report success.

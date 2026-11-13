@@ -989,46 +989,46 @@ importers:
         version: 11.2.2
       metascraper:
         specifier: ^5.58.1
-        version: 5.58.1(@noble/hashes@2.4.0)(debug@4.4.3)
+        version: 5.58.1(debug@4.4.3)
       metascraper-amazon:
         specifier: ^5.56.2
-        version: 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+        version: 5.56.2(debug@4.4.3)
       metascraper-author:
         specifier: ^5.56.2
-        version: 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+        version: 5.56.2(debug@4.4.3)
       metascraper-date:
         specifier: ^5.56.2
-        version: 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+        version: 5.56.2(debug@4.4.3)
       metascraper-description:
         specifier: ^5.56.2
-        version: 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+        version: 5.56.2(debug@4.4.3)
       metascraper-image:
         specifier: ^5.56.2
-        version: 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+        version: 5.56.2(debug@4.4.3)
       metascraper-logo:
         specifier: ^5.56.2
-        version: 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+        version: 5.56.2(debug@4.4.3)
       metascraper-logo-favicon:
         specifier: 5.53.0
-        version: 5.53.0(@noble/hashes@2.4.0)(debug@4.4.3)
+        version: 5.53.0(debug@4.4.3)
       metascraper-publisher:
         specifier: ^5.56.2
-        version: 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+        version: 5.56.2(debug@4.4.3)
       metascraper-readability:
         specifier: ^5.56.2
-        version: 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+        version: 5.56.2(debug@4.4.3)
       metascraper-title:
         specifier: ^5.56.2
-        version: 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+        version: 5.56.2(debug@4.4.3)
       metascraper-url:
         specifier: ^5.56.2
-        version: 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+        version: 5.56.2(debug@4.4.3)
       metascraper-x:
         specifier: ^5.58.1
-        version: 5.58.1(@noble/hashes@2.4.0)(debug@4.4.3)
+        version: 5.58.1(debug@4.4.3)
       metascraper-youtube:
         specifier: ^5.58.1
-        version: 5.58.1(@noble/hashes@2.4.0)(debug@4.4.3)
+        version: 5.58.1(debug@4.4.3)
       node-cron:
         specifier: ^3.0.3
         version: 3.0.3
@@ -1587,6 +1587,9 @@ importers:
       drizzle-orm:
         specifier: ^0.45.4
         version: 0.45.4(@opentelemetry/api@1.9.0)(@types/better-sqlite3@7.6.13)(better-sqlite3@13.0.3)(kysely@0.29.6)
+      isomorphic-dompurify:
+        specifier: ^3.6.0
+        version: 3.23.0(@noble/hashes@2.4.0)
       nodemailer:
         specifier: ^10.0.9
         version: 10.0.16
@@ -5423,18 +5426,21 @@ packages:
   '@opentelemetry/sdk-trace-base@2.2.0':
     resolution: {integrity: sha512-xWQgL0Bmctsalg6PaXExmzdedSp3gyKV8mQBwK/j9VGdCDu2fmXIb2gAehBKbkXCpJ4HPkgv3QfoJWRT4dHWbw==}
     engines: {node: ^18.19.0 || >=20.6.0}
+    deprecated: Use @opentelemetry/sdk-trace package
     peerDependencies:
       '@opentelemetry/api': '>=1.3.0 <1.10.0'
 
   '@opentelemetry/sdk-trace-base@2.6.0':
     resolution: {integrity: sha512-g/OZVkqlxllgFM7qMKqbPV9c1DUPhQ7d4n3pgZFcrnrNft9eJXZM2TNHTPYREJBrtNdRytYyvwjgL5geDKl3EQ==}
     engines: {node: ^18.19.0 || >=20.6.0}
+    deprecated: Use @opentelemetry/sdk-trace package
     peerDependencies:
       '@opentelemetry/api': '>=1.3.0 <1.10.0'
 
   '@opentelemetry/sdk-trace-node@2.2.0':
     resolution: {integrity: sha512-+OaRja3f0IqGG2kptVeYsrZQK9nKRSpfFrKtRBq4uh6nIB8bTBgaGvYQrQoRrQWQMA5dK5yLhDMDc0dvYvCOIQ==}
     engines: {node: ^18.19.0 || >=20.6.0}
+    deprecated: Use @opentelemetry/sdk-trace package
     peerDependencies:
       '@opentelemetry/api': '>=1.0.0 <1.10.0'
 
@@ -7200,6 +7206,9 @@ packages:
   '@smithy/core@3.34.1':
     resolution: {integrity: sha512-dLcOUxz8YCv1RZUMKq6GbyUf95pLbrqh34bPvpCZ1+CByFF31BEAFewZjsGCnVsZTKdThNENfGyAgk2TJqVwSw==}
     engines: {node: '>=18.0.0'}
+    deprecated: |-
+      Deprecated due to a bug in custom logger data redaction. Upgrade to the latest version. If you used a custom logger with this
+        version, review your logs and rotate any credentials or other secrets. See https://github.com/aws/aws-sdk-js-v3/issues/8393.
 
   '@smithy/credential-provider-imds@4.5.2':
     resolution: {integrity: sha512-A9uSdn72ozbRUSit0eib0TW7nXuNPlaeM0zcGkJ+nE6tFcSDbnmtwoxbTCFBukVQcszDAyvsd7+rTduPTXpygg==}
@@ -11615,6 +11624,11 @@ packages:
   isobject@3.0.1:
     resolution: {integrity: sha512-WhB9zCku7EGTj/HQQRz5aUQEUeoQZH2bWcltRErOpymJ4boYE6wL9Tbr23krRPSZ+C5zqNSrSw+Cc7sZZ4b7vg==}
     engines: {node: '>=0.10.0'}
+
+  isomorphic-dompurify@3.23.0:
+    resolution: {integrity: sha512-RuYFgdNApoTlR3QxVUyWdS/1ATpLEWEVg3H2tMImbfr6HkYPnuW1sdEtW4PRGlFhp04VbQQjcjXnucHYpXT44A==}
+    engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
+    deprecated: Raised the minimum Node.js version (breaking) without a major bump. Use 4.x for the same code with correct semver, or pin 3.19.0 for Node < 22.22.2.
 
   isomorphic.js@0.2.5:
     resolution: {integrity: sha512-PIeMbHqMt4DnUP3MA/Flc0HElYjMXArsw1qwJZcm9sqR8mq3l8NYizFMty0pWwE/tzIGH3EKK5+jes5mAr85yw==}
@@ -21792,7 +21806,7 @@ snapshots:
     dependencies:
       '@chevrotain/types': 11.1.2
 
-  '@metascraper/helpers@5.53.0(@noble/hashes@2.4.0)(debug@4.4.3)':
+  '@metascraper/helpers@5.53.0(debug@4.4.3)':
     dependencies:
       audio-extensions: 0.0.0
       chrono-node: 2.10.1
@@ -21824,7 +21838,7 @@ snapshots:
       - canvas
       - debug
 
-  '@metascraper/helpers@5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)':
+  '@metascraper/helpers@5.56.2(debug@4.4.3)':
     dependencies:
       audio-extensions: 0.0.0
       chrono-node: 2.10.1
@@ -28681,6 +28695,14 @@ snapshots:
 
   isobject@3.0.1: {}
 
+  isomorphic-dompurify@3.23.0(@noble/hashes@2.4.0):
+    dependencies:
+      dompurify: 3.4.16
+      jsdom: 30.0.1(@noble/hashes@2.4.0)
+    transitivePeerDependencies:
+      - '@noble/hashes'
+      - canvas
+
   isomorphic.js@0.2.5: {}
 
   isostring@0.0.1: {}
@@ -29494,50 +29516,50 @@ snapshots:
       ts-dedent: 2.2.0
       uuid: 14.0.1
 
-  metascraper-amazon@5.56.2(@noble/hashes@2.4.0)(debug@4.4.3):
+  metascraper-amazon@5.56.2(debug@4.4.3):
     dependencies:
-      '@metascraper/helpers': 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+      '@metascraper/helpers': 5.56.2(debug@4.4.3)
     transitivePeerDependencies:
       - '@noble/hashes'
       - canvas
       - debug
 
-  metascraper-author@5.56.2(@noble/hashes@2.4.0)(debug@4.4.3):
+  metascraper-author@5.56.2(debug@4.4.3):
     dependencies:
-      '@metascraper/helpers': 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+      '@metascraper/helpers': 5.56.2(debug@4.4.3)
     transitivePeerDependencies:
       - '@noble/hashes'
       - canvas
       - debug
 
-  metascraper-date@5.56.2(@noble/hashes@2.4.0)(debug@4.4.3):
+  metascraper-date@5.56.2(debug@4.4.3):
     dependencies:
-      '@metascraper/helpers': 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+      '@metascraper/helpers': 5.56.2(debug@4.4.3)
     transitivePeerDependencies:
       - '@noble/hashes'
       - canvas
       - debug
 
-  metascraper-description@5.56.2(@noble/hashes@2.4.0)(debug@4.4.3):
+  metascraper-description@5.56.2(debug@4.4.3):
     dependencies:
-      '@metascraper/helpers': 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+      '@metascraper/helpers': 5.56.2(debug@4.4.3)
     transitivePeerDependencies:
       - '@noble/hashes'
       - canvas
       - debug
 
-  metascraper-image@5.56.2(@noble/hashes@2.4.0)(debug@4.4.3):
+  metascraper-image@5.56.2(debug@4.4.3):
     dependencies:
-      '@metascraper/helpers': 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+      '@metascraper/helpers': 5.56.2(debug@4.4.3)
     transitivePeerDependencies:
       - '@noble/hashes'
       - canvas
       - debug
 
-  metascraper-logo-favicon@5.53.0(@noble/hashes@2.4.0)(debug@4.4.3):
+  metascraper-logo-favicon@5.53.0(debug@4.4.3):
     dependencies:
       '@keyvhq/memoize': 2.2.7
-      '@metascraper/helpers': 5.53.0(@noble/hashes@2.4.0)(debug@4.4.3)
+      '@metascraper/helpers': 5.53.0(debug@4.4.3)
       lodash: 4.18.1
       reachable-url: 1.8.4
     transitivePeerDependencies:
@@ -29545,26 +29567,26 @@ snapshots:
       - canvas
       - debug
 
-  metascraper-logo@5.56.2(@noble/hashes@2.4.0)(debug@4.4.3):
+  metascraper-logo@5.56.2(debug@4.4.3):
     dependencies:
-      '@metascraper/helpers': 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+      '@metascraper/helpers': 5.56.2(debug@4.4.3)
       lodash: 4.18.1
     transitivePeerDependencies:
       - '@noble/hashes'
       - canvas
       - debug
 
-  metascraper-publisher@5.56.2(@noble/hashes@2.4.0)(debug@4.4.3):
+  metascraper-publisher@5.56.2(debug@4.4.3):
     dependencies:
-      '@metascraper/helpers': 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+      '@metascraper/helpers': 5.56.2(debug@4.4.3)
     transitivePeerDependencies:
       - '@noble/hashes'
       - canvas
       - debug
 
-  metascraper-readability@5.56.2(@noble/hashes@2.4.0)(debug@4.4.3):
+  metascraper-readability@5.56.2(debug@4.4.3):
     dependencies:
-      '@metascraper/helpers': 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+      '@metascraper/helpers': 5.56.2(debug@4.4.3)
       '@mozilla/readability': 0.6.0
       async-memoize-one: 1.2.1
       happy-dom: 20.11.15
@@ -29575,33 +29597,33 @@ snapshots:
       - debug
       - utf-8-validate
 
-  metascraper-title@5.56.2(@noble/hashes@2.4.0)(debug@4.4.3):
+  metascraper-title@5.56.2(debug@4.4.3):
     dependencies:
-      '@metascraper/helpers': 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+      '@metascraper/helpers': 5.56.2(debug@4.4.3)
     transitivePeerDependencies:
       - '@noble/hashes'
       - canvas
       - debug
 
-  metascraper-url@5.56.2(@noble/hashes@2.4.0)(debug@4.4.3):
+  metascraper-url@5.56.2(debug@4.4.3):
     dependencies:
-      '@metascraper/helpers': 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+      '@metascraper/helpers': 5.56.2(debug@4.4.3)
     transitivePeerDependencies:
       - '@noble/hashes'
       - canvas
       - debug
 
-  metascraper-x@5.58.1(@noble/hashes@2.4.0)(debug@4.4.3):
+  metascraper-x@5.58.1(debug@4.4.3):
     dependencies:
-      '@metascraper/helpers': 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+      '@metascraper/helpers': 5.56.2(debug@4.4.3)
     transitivePeerDependencies:
       - '@noble/hashes'
       - canvas
       - debug
 
-  metascraper-youtube@5.58.1(@noble/hashes@2.4.0)(debug@4.4.3):
+  metascraper-youtube@5.58.1(debug@4.4.3):
     dependencies:
-      '@metascraper/helpers': 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+      '@metascraper/helpers': 5.56.2(debug@4.4.3)
       get-video-id: 3.7.0
       p-locate: 7.0.0
       reachable-url: 2.1.4
@@ -29610,9 +29632,9 @@ snapshots:
       - canvas
       - debug
 
-  metascraper@5.58.1(@noble/hashes@2.4.0)(debug@4.4.3):
+  metascraper@5.58.1(debug@4.4.3):
     dependencies:
-      '@metascraper/helpers': 5.56.2(@noble/hashes@2.4.0)(debug@4.4.3)
+      '@metascraper/helpers': 5.56.2(debug@4.4.3)
       cheerio: 1.2.0
       debug-logfmt: 1.4.15(debug@4.4.3)
       whoops: 5.1.4

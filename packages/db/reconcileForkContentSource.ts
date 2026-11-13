@@ -49,16 +49,25 @@ import Database from "better-sqlite3";
 
 import dbConfig from "./drizzle.config";
 
-/** sha256 of 0094_add_content_source.sql, identical to the fork's old 0081. */
+/**
+ * sha256 of 0095_add_content_source.sql, identical to the fork's old 0081 and
+ * to the 0094_add_content_source it was renumbered from.
+ */
 const SHADOWED_MIGRATION_HASH =
   "74987bf0a452a21efcf831733bb7521780a26edda055f6dedd5ec4ec2d1f50cf";
 
 /**
- * `when` of 0094 in the drizzle journal. A row carrying the hash above but an
- * *earlier* timestamp is the fork's shadowed 0081; at or after this value it is
- * the legitimate 0094 and must be left alone.
+ * `when` of 0095 in the drizzle journal. A row carrying the hash above but an
+ * *earlier* timestamp is a stale stamp (the fork's shadowed 0081, or the
+ * fork's 0094 from before upstream took 0094 for better-auth); at or after
+ * this value it is the legitimate 0095 and must be left alone.
+ *
+ * The 0094 case: upstream v0.34 added 0094_migrate_to_better_auth with an
+ * EARLIER `when` (1785711744217) than the fork's 0094 (1789922999922). Left
+ * alone, the watermark would skip the auth migration and then fail 0095 with
+ * "duplicate column name".
  */
-const CONTENT_SOURCE_MIGRATION_MILLIS = 1789922999922;
+const CONTENT_SOURCE_MIGRATION_MILLIS = 1794529333000;
 
 const BACKUP_TABLE = "_karakeep_content_source_backup";
 
@@ -179,13 +188,29 @@ function restore(db: Database.Database): void {
   }
 }
 
-const db = new Database(dbConfig.dbCredentials.url);
-try {
-  if (process.argv.includes("--restore")) {
-    restore(db);
-  } else {
-    prepare(db);
+function withDatabase(fn: (db: Database.Database) => void): void {
+  const db = new Database(dbConfig.dbCredentials.url);
+  try {
+    fn(db);
+  } finally {
+    db.close();
   }
-} finally {
-  db.close();
+}
+
+/** Run before drizzle's migrate(); a no-op on unaffected databases. */
+export function reconcileBeforeMigrate(): void {
+  withDatabase(prepare);
+}
+
+/** Run after drizzle's migrate(); a no-op when nothing was backed up. */
+export function restoreAfterMigrate(): void {
+  withDatabase(restore);
+}
+
+if (process.argv[1]?.endsWith("reconcileForkContentSource.ts")) {
+  if (process.argv.includes("--restore")) {
+    restoreAfterMigrate();
+  } else {
+    reconcileBeforeMigrate();
+  }
 }

@@ -766,8 +766,7 @@ export const bookmarksAppRouter = router({
         }
 
         if (htmlContentUpdate) {
-          tx
-            .update(bookmarkLinks)
+          tx.update(bookmarkLinks)
             .set({
               htmlContent: htmlContentUpdate.htmlContent,
               contentAssetId: htmlContentUpdate.contentAssetId,
@@ -785,14 +784,14 @@ export const bookmarksAppRouter = router({
             }
             tx.insert(assets)
               .values({
-              id: htmlContentUpdate.contentAssetId,
-              bookmarkId: input.bookmarkId,
-              userId: ctx.user.id,
-              assetType: AssetTypes.LINK_HTML_CONTENT,
-              contentType: ASSET_TYPES.TEXT_HTML,
-              size: htmlContentUpdate.contentAssetSize ?? undefined,
-              fileName: null,
-            })
+                id: htmlContentUpdate.contentAssetId,
+                bookmarkId: input.bookmarkId,
+                userId: ctx.user.id,
+                assetType: AssetTypes.LINK_HTML_CONTENT,
+                contentType: ASSET_TYPES.TEXT_HTML,
+                size: htmlContentUpdate.contentAssetSize ?? undefined,
+                fileName: null,
+              })
               .run();
           } else if (htmlContentUpdate.oldContentAssetId) {
             // Cleared, or small enough to go inline — drop the old asset row.
