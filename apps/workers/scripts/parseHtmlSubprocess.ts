@@ -25,6 +25,7 @@ import logger from "@karakeep/shared/logger";
 import metascraperAmazonImproved from "../metascraper-plugins/metascraper-amazon-improved";
 import metascraperReddit from "../metascraper-plugins/metascraper-reddit";
 import metascraperSafeFavicon from "../metascraper-plugins/metascraper-safe-favicon";
+import metascraperYoutubeOriginalTitle from "../metascraper-plugins/metascraper-youtube-original-title";
 import {
   parseSubprocessErrorSchema,
   parseSubprocessInputSchema,
@@ -47,6 +48,8 @@ const metascraperParser = metascraper([
   }),
   metascraperAmazonImproved(),
   metascraperAmazon(),
+  // Before metascraper-youtube: its title rule reads the translated <title>.
+  metascraperYoutubeOriginalTitle(),
   metascraperYoutube({
     gotOpts: {
       agent: {
